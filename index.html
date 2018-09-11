@@ -33,7 +33,7 @@ window.onload = function() {
 		"C06",
 		"C08",
 		"C03",
-//		"A03", // test
+		"A03", // test
 	];
 	var containsBus = function(id) {
 		for (var i = 0; i < BUS.length; i++)
@@ -91,7 +91,7 @@ window.onload = function() {
 					var id = getModule(data.module);
 					if (containsBus(id)) {
 //					if (true) { //id == "BSCM-A01") {
-						dump(data.payload);
+//						dump(data.payload);
 						var ar = [];
 						var d = data.payload.channels;
 						for (var i = 0; i < d.length; i++) {
@@ -145,7 +145,7 @@ window.onload = function() {
 			icon.setPosition(ll);
 		}
 //		dump(ar);
-		icon.data = { v: ar[7], time: Math.floor(ar[1] % 100 + 9) + ":" + fixnum(Math.floor(ar[2] / 100), 2) + ":" + fixnum(ar[2] % 100, 2) }; // , t: list[i + 10] / 100, h: list[i + 11] / 100 };
+		icon.data = { v: ar[7], time: Math.floor((ar[1] % 100 + 9) % 24) + ":" + fixnum(Math.floor(ar[2] / 100), 2) + ":" + fixnum(ar[2] % 100, 2) }; // , t: list[i + 10] / 100, h: list[i + 11] / 100 };
 		icon.lastUpdate = new Date().getTime();
 		google.maps.event.addListener(icon, "click", function(e) {
 			var st = " [" + this.data.time + "現在]";
