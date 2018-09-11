@@ -79,6 +79,9 @@ window.onload = function() {
 	var ws = null;
 	setInterval(function() {
 		if (ws == null || ws.readyState != 1) {
+			if (ws) {
+				ws.close();
+			}
 			ws = new WebSocket("wss://api.sakura.io/ws/v1/" + SAKURA_TOKEN);
 			ws.onmessage = function(e) {
 				console.log(e.data);
@@ -95,11 +98,21 @@ window.onload = function() {
 						var ar = [];
 						var d = data.payload.channels;
 						for (var i = 0; i < d.length; i++) {
-							var d2 = parseInt(d[i].value);
-							for (var j = 0; j < 4; j++) {
-								var val = d2 & 0xffff;
-								ar.push(val);
-								d2 = d2 / 0x10000;
+							var type = d[i].type;
+							if (type == "b") {  // value: 34120f000e001111 (8byte binary)
+								var d2 = d[i].value;
+								for (var j = 0; j < 4; j++) {
+									var val = parseInt(d2.substr(j * 4 + 2, 2), 16) << 8;
+									val += parseInt(d2.substr(j * 4, 2), 16);
+									ar.push(val);
+								}
+							} else if (type == "L") { // 互換性のため
+								var d2 = parseInt(d[i].value);
+								for (var j = 0; j < 4; j++) {
+									var val = d2 & 0xffff;
+									ar.push(val);
+									d2 = d2 / 0x10000;
+								}
 							}
 						}
 //						dump(ar);
