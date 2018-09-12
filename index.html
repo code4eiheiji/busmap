@@ -79,6 +79,33 @@ window.onload = function() {
 	var first = true;
 	
 	// GPS
+	var parseBusData = function(data) {
+		var ar = [];
+		var d = data.payload.channels;
+		for (var i = 0; i < d.length; i++) {
+			var type = d[i].type;
+			if (type == "b") {  // value: 34120f000e001111 (8byte binary)
+				var d2 = d[i].value;
+				for (var j = 0; j < 4; j++) {
+					var val = parseInt(d2.substr(j * 4 + 2, 2), 16) << 8;
+					val += parseInt(d2.substr(j * 4, 2), 16);
+					ar.push(val);
+				}
+			} else if (type == "L") { // 互換性のため
+				var d2 = parseInt(d[i].value);
+				for (var j = 0; j < 4; j++) {
+					var val = d2 & 0xffff;
+					ar.push(val);
+					d2 = d2 / 0x10000;
+				}
+			}
+		}
+//						dump(ar);
+//						mes(id + "," + ar.join(", "));
+		
+		setIcon(data.module, ar);
+	};
+	
 	var ws = null;
 	setInterval(function() {
 		if (ws == null || ws.readyState != 1) {
@@ -98,30 +125,7 @@ window.onload = function() {
 					if (containsBus(id)) {
 //					if (true) { //id == "BSCM-A01") {
 //						dump(data.payload);
-						var ar = [];
-						var d = data.payload.channels;
-						for (var i = 0; i < d.length; i++) {
-							var type = d[i].type;
-							if (type == "b") {  // value: 34120f000e001111 (8byte binary)
-								var d2 = d[i].value;
-								for (var j = 0; j < 4; j++) {
-									var val = parseInt(d2.substr(j * 4 + 2, 2), 16) << 8;
-									val += parseInt(d2.substr(j * 4, 2), 16);
-									ar.push(val);
-								}
-							} else if (type == "L") { // 互換性のため
-								var d2 = parseInt(d[i].value);
-								for (var j = 0; j < 4; j++) {
-									var val = d2 & 0xffff;
-									ar.push(val);
-									d2 = d2 / 0x10000;
-								}
-							}
-						}
-//						dump(ar);
-//						mes(id + "," + ar.join(", "));
-						
-						setIcon(data.module, ar);
+						parseBusData(data);
 					}
 				}
 			};
@@ -160,6 +164,7 @@ window.onload = function() {
 		} else {
 			icon.setPosition(ll);
 		}
+//		console.log(id);
 //		dump(ar);
 		icon.data = { v: ar[7], time: Math.floor((ar[1] % 100 + 9) % 24) + ":" + fixnum(Math.floor(ar[2] / 100), 2) + ":" + fixnum(ar[2] % 100, 2) }; // , t: list[i + 10] / 100, h: list[i + 11] / 100 };
 		icon.lastUpdate = new Date().getTime();
@@ -217,6 +222,22 @@ window.onload = function() {
 	}
 	map.fitBounds(bounds);
 	*/
+	
+	var url = "http://sabae.club/siot/4/v2";
+	jsonp(url + "&callback=" + getCallbackMethod(function(data) {
+//		dump(data);
+		var chk = {};
+		for (var i = data.length; i >= 0; i--) {
+			var d = data[i];
+			if (d && d["module"]) {
+				var id = getModule(d.module);
+				if (containsBus(id) && chk[id] == null) {
+					parseBusData(d);
+					chk[id] = id;
+				}
+			}
+		}
+	}));
 };
 </script>
 <style>
